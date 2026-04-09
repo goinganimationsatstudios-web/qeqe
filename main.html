@@ -983,7 +983,7 @@
           <video id="phone-preview" autoplay playsinline muted
             style="width:260px;border-radius:14px;background:#000;"></video>
         </div>`;
-      const peer = new Peer(phoneMode);
+      const peer = new Peer(phoneMode, { host: 'peerjs.fly.dev', secure: true, port: 443 });
       navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio: false })
         .then(stream => {
           document.getElementById('phone-preview').srcObject = stream;
@@ -1003,18 +1003,23 @@
         });
     } else {
       // ── DESKTOP MODE: receive camera from phone ──
-      const peer = new Peer();
+      const peer = new Peer({ host: 'peerjs.fly.dev', secure: true, port: 443 });
       let peerId = null;
-
-      peer.on('open', id => {
-        peerId = id;
-      });
 
       const camVideo = document.getElementById('cam-video');
       const camStatus = document.getElementById('cam-status');
+      const showQrBtn = document.getElementById('showQrBtn');
+      showQrBtn.textContent = '⏳ Подключение...';
+      showQrBtn.disabled = true;
+
+      peer.on('open', id => {
+        peerId = id;
+        showQrBtn.textContent = 'Показать QR';
+        showQrBtn.disabled = false;
+      });
 
       document.getElementById('showQrBtn').addEventListener('click', () => {
-        if (!peerId) { alert('PeerJS ещё не готов, подожди секунду'); return; }
+        if (!peerId) return; // просто игнорируем если не готов
         const phoneUrl = location.href.split('?')[0] + '?phone=' + peerId;
         document.getElementById('qr-code').innerHTML = '';
         new QRCode(document.getElementById('qr-code'), {
