@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Поле чудес</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Montserrat', 'Segoe UI', sans-serif;
+      text-align: center;
+      background: #07050f;
+      min-height: 100vh;
+      padding: 20px 20px 60px;
+      color: #fff;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── STARS BACKGROUND ── */
+    .stars-layer {
+      position: fixed; inset: 0; z-index: -3; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(118,75,162,0.35) 0%, transparent 60%),
+        radial-gradient(ellipse at 20% 80%, rgba(102,126,234,0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 60%, rgba(240,147,251,0.15) 0%, transparent 50%),
+        linear-gradient(180deg, #07050f 0%, #130d2e 60%, #07050f 100%);
+    }
+
+    /* ── SPOTLIGHTS ── */
+    .spotlights {
+      position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden;
+    }
+    .spotlight {
+      position: absolute;
+      top: -20%;
+      width: 3px;
+      height: 130vh;
+      transform-origin: top center;
+      border-radius: 0 0 50% 50%;
+      filter: blur(18px);
+      animation: swingSlow linear infinite alternate;
+    }
+    .spotlight-1 {
+      left: 18%; background: linear-gradient(180deg, rgba(240,147,251,0.9), transparent);
+      animation-duration: 7s; animation-delay: 0s;
+    }
+    .spotlight-2 {
+      left: 50%; background: linear-gradient(180deg, rgba(255,220,100,0.7), transparent);
+      animation-duration: 9s; animation-delay: -3s;
+    }
+    .spotlight-3 {
+      left: 82%; background: linear-gradient(180deg, rgba(102,126,234,0.9), transparent);
+      animation-duration: 6s; animation-delay: -1.5s;
+    }
+    @keyframes swingSlow {
+      from { transform: rotate(-12deg); }
+      to   { transform: rotate(12deg); }
+    }
+
+    /* ── PARTICLES ── */
+    .particles { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+    .particle {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.7);
+      animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(110vh) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.4; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    /* ── COLUMNS ── */
+    .columns-wrap {
+      position: fixed; inset: 0;
+      display: flex; justify-content: space-between; align-items: stretch;
+      pointer-events: none; z-index: 0;
+    }
+    .column {
+      width: clamp(44px, 5vw, 72px);
+      display: flex; flex-direction: column; align-items: center;
+      height: 100%;
+    }
+
+    /* Top cap */
+    .col-capital {
+      width: 100%;
+      flex-shrink: 0;
+      height: clamp(20px, 3vh, 40px);
+      background: linear-gradient(180deg, #f5e6b8 0%, #c9a84c 100%);
+      box-shadow: 0 0 24px rgba(255,200,80,0.7), 0 0 60px rgba(255,180,50,0.25);
+    }
+
+    /* Shaft */
+    .col-shaft {
+      width: 60%;
+      flex: 1;
+      background: linear-gradient(90deg,
+        #0a0820 0%,
+        #1c1850 25%,
+        #2e2a78 50%,
+        #1c1850 75%,
+        #0a0820 100%
+      );
+      border-left: 1px solid rgba(255,200,80,0.15);
+      border-right: 1px solid rgba(255,200,80,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .col-shaft::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        180deg,
+        transparent 0px, transparent 20px,
+        rgba(255,255,255,0.03) 20px, rgba(255,255,255,0.03) 22px
+      );
+    }
+
+    /* Bottom base */
+    .col-base {
+      width: 100%;
+      flex-shrink: 0;
+      height: clamp(20px, 3vh, 40px);
+      background: linear-gradient(180deg, #c9a84c 0%, #7a5c18 100%);
+      box-shadow: 0 0 24px rgba(255,200,80,0.5);
+    }
+
+    @keyframes shimmerLine {
+      0%   { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    /* ── FLOOR GLOW ── */
+    .floor-glow {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 200px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(102,126,234,0.18) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── CONTAINER ── */
+    .container {
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.04);
+      padding: 50px 40px;
+      border-radius: 28px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.07),
+        0 30px 80px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      backdrop-filter: blur(24px);
+      animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative; z-index: 1;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 3.4rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(90deg, #ffd700, #f093fb, #667eea, #00d2ff, #ffd700);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 30px rgba(255,215,0,0.35));
+      animation: titleShimmer 4s linear infinite;
+    }
+    @keyframes titleShimmer {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.35);
+      font-size: 0.8rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    .divider {
+      width: 80px; height: 2px;
+      background: linear-gradient(90deg, transparent, #ffd700, #f093fb, transparent);
+      border-radius: 2px;
+      margin: 18px auto 36px;
+      animation: shimmerLine 2s linear infinite;
+      background-size: 200% 100%;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 14px;
+    }
+
+    .input-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    input {
+      padding: 14px 22px;
+      font-size: 16px;
+      font-family: inherit;
+      font-weight: 600;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 50px;
+      width: 280px;
+      max-width: 100%;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      transition: all 0.3s ease;
+      outline: none;
+      text-align: center;
+    }
+    input::placeholder { color: rgba(255,255,255,0.25); }
+    input:focus {
+      border-color: rgba(255,215,0,0.5);
+      background: rgba(255,255,255,0.09);
+      box-shadow: 0 0 0 4px rgba(255,215,0,0.08);
+      transform: translateY(-1px);
+    }
+
+    button {
+      padding: 14px 28px;
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffd700, #f093fb, #667eea);
+      background-size: 200% 200%;
+      color: #1a1040;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
+      box-shadow: 0 6px 24px rgba(255,215,0,0.3);
+      animation: gradShift 4s ease infinite;
+    }
+    @keyframes gradShift {
+      0%,100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 36px rgba(255,215,0,0.45);
+    }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.35; cursor: not-allowed; transform: none; animation: none; }
+
+    /* Stats */
+    .stats {
+      display: flex; justify-content: center; gap: 24px;
+      margin: 28px 0; flex-wrap: wrap;
+    }
+    .stat-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,215,0,0.12);
+      border-radius: 16px;
+      padding: 12px 24px; min-width: 90px;
+    }
+    .stat-value {
+      font-size: 1.8rem; font-weight: 900;
+      background: linear-gradient(135deg, #ffd700, #f093fb);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.62rem; letter-spacing: 1.5px; text-transform: uppercase;
+      color: rgba(255,255,255,0.3); margin-top: 4px;
+    }
+
+    /* Word cubes */
+    .word-container {
+      display: flex; justify-content: center; gap: 10px;
+      margin: 36px 0; flex-wrap: wrap; min-height: 80px; align-items: center;
+    }
+    .letter-cube { width: 62px; height: 62px; perspective: 800px; position: relative; }
+    .cube-inner {
+      width: 100%; height: 100%; position: absolute;
+      transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .letter-cube.flipped .cube-inner { transform: rotateY(180deg); }
+    .cube-face {
+      position: absolute; width: 100%; height: 100%;
+      backface-visibility: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 900; border-radius: 14px;
+    }
+    .front {
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.4);
+      border: 1.5px solid rgba(255,255,255,0.09);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .back {
+      background: linear-gradient(145deg, #ffd700, #f093fb);
+      color: #1a1040;
+      transform: rotateY(180deg);
+      box-shadow: 0 6px 24px rgba(255,215,0,0.4);
+    }
+    .letter-cube.space .cube-inner { display: none; }
+
+    /* Guessed chips */
+    .guessed-section { margin: 10px 0 20px; }
+    .guessed-letters {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; min-height: 32px;
+    }
+    .guessed-chip {
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+      animation: popIn 0.3s ease;
+    }
+    .guessed-chip.hit {
+      background: rgba(46,213,115,0.12); border: 1px solid rgba(46,213,115,0.4); color: #2ed573;
+    }
+    .guessed-chip.miss {
+      background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.3); color: #ff4757;
+    }
+
+    /* Message */
+    .message {
+      margin-top: 24px; font-size: 15px; font-weight: 600;
+      min-height: 28px; padding: 14px 24px; border-radius: 14px;
+      opacity: 0; transform: translateY(10px);
+      transition: all 0.35s ease; letter-spacing: 0.3px;
+    }
+    .message.show { opacity: 1; transform: translateY(0); }
+    .success { background: rgba(46,213,115,0.1); border: 1px solid rgba(46,213,115,0.3); color: #2ed573; }
+    .error   { background: rgba(255,71,87,0.1);  border: 1px solid rgba(255,71,87,0.3);  color: #ff6b81; }
+    .win-message {
+      background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(240,147,251,0.12));
+      border: 1px solid rgba(255,215,0,0.4); color: #ffd700; font-size: 18px;
+    }
+
+    /* Image cube back */
+    .back.has-image {
+      padding: 0; overflow: hidden;
+      background: #000;
+    }
+    .back.has-image img {
+      width: 100%; height: 100%;
+      object-fit: cover; border-radius: 12px;
+    }
+
+    /* Image assign panel */
+    #img-assign-panel {
+      margin-top: 12px;
+      padding: 14px 18px;
+      background: rgba(255,215,0,0.07);
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 16px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      display: none;
+    }
+    #img-assign-panel.show { display: block; }
+    #img-assign-panel .preview {
+      width: 48px; height: 48px; border-radius: 8px;
+      object-fit: cover; vertical-align: middle;
+      margin-right: 10px; border: 2px solid rgba(255,215,0,0.4);
+    }
+    #img-assign-panel select {
+      padding: 8px 14px; border-radius: 50px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff; font-family: inherit; font-size: 13px;
+      outline: none; cursor: pointer; margin: 0 8px;
+    }
+    #img-assign-panel select option { background: #1a1040; }
+    #img-assign-btn {
+      padding: 8px 18px; font-size: 13px;
+      border-radius: 50px; font-family: inherit; font-weight: 700;
+      background: linear-gradient(135deg, #ffd700, #f093fb);
+      color: #1a1040; border: none; cursor: pointer;
+    }
+
+    /* Confetti canvas */
+    #confetti-canvas {
+      position: fixed; inset: 0; pointer-events: none; z-index: 999;
+    }
+
+    /* Troll image overlay */
+    #troll-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+    #troll-overlay.show {
+      opacity: 1; pointer-events: all;
+    }
+    #troll-overlay img {
+      max-width: 100%; max-height: 100%;
+      object-fit: contain;
+      animation: trollPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #troll-overlay .troll-hint {
+      position: absolute; bottom: 24px;
+      font-size: 13px; color: rgba(255,255,255,0.4);
+      letter-spacing: 1px;
+    }
+    @keyframes trollPop {
+      from { transform: scale(0.7); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    /* Paste indicator */
+    .paste-indicator {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #2ed573;
+      margin-top: 8px; opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .paste-indicator.show { opacity: 1; }
+    .paste-indicator::before { content: '🖼'; }
+
+    /* Confirm dialog */
+    .confirm-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .confirm-overlay.show { opacity: 1; pointer-events: all; }
+    .confirm-box {
+      background: linear-gradient(145deg, #1a1540, #0f0c29);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 24px;
+      padding: 36px 40px;
+      max-width: 360px; width: 90%;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+      transform: scale(0.85);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      text-align: center;
+    }
+    .confirm-overlay.show .confirm-box { transform: scale(1); }
+    .confirm-icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .confirm-title {
+      font-size: 1.2rem; font-weight: 900;
+      color: #fff; margin-bottom: 8px;
+    }
+    .confirm-text {
+      font-size: 0.85rem; color: rgba(255,255,255,0.45);
+      margin-bottom: 28px; line-height: 1.5;
+    }
+    .confirm-btns { display: flex; gap: 12px; justify-content: center; }
+    .confirm-btns button { flex: 1; max-width: 130px; padding: 12px 0; font-size: 14px; }
+    .btn-cancel {
+      background: rgba(255,255,255,0.07) !important;
+      color: rgba(255,255,255,0.6) !important;
+      box-shadow: none !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      animation: none !important;
+    }
+    .btn-cancel:hover { background: rgba(255,255,255,0.12) !important; transform: translateY(-2px); }
+    .btn-confirm-yes {
+      background: linear-gradient(135deg,#ff4757,#c0392b) !important;
+      box-shadow: 0 6px 20px rgba(255,71,87,0.35) !important;
+      animation: none !important;
+      color: #fff !important;
+    }
+    .btn-confirm-yes:hover { box-shadow: 0 10px 28px rgba(255,71,87,0.5) !important; transform: translateY(-2px); }
+    /* ── CAMERA PANEL ── */
+    .cam-panel {
+      position: fixed; top: 20px; right: 20px; z-index: 500;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,215,0,0.15);
+      border-radius: 20px;
+      padding: 16px;
+      backdrop-filter: blur(20px);
+      width: 200px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    .cam-panel-title {
+      font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase;
+      color: rgba(255,255,255,0.35); margin-bottom: 10px;
+    }
+    #cam-video {
+      width: 100%; border-radius: 12px;
+      background: #000; aspect-ratio: 4/3;
+      object-fit: cover; display: block;
+    }
+    #cam-status {
+      font-size: 11px; color: rgba(255,255,255,0.35);
+      margin-top: 8px; text-align: center;
+    }
+    #cam-status.connected { color: #2ed573; }
+    .cam-qr-btn {
+      width: 100%; margin-top: 10px;
+      padding: 9px; font-size: 12px; font-family: inherit; font-weight: 700;
+      background: linear-gradient(135deg, #ffd700, #f093fb);
+      color: #1a1040; border: none; border-radius: 50px;
+      cursor: pointer; letter-spacing: 0.5px;
+    }
+
+    /* QR modal */
+    .qr-modal {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .qr-modal.show { opacity: 1; pointer-events: all; }
+    .qr-box {
+      background: linear-gradient(145deg, #1a1540, #0f0c29);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 24px; padding: 32px 28px;
+      text-align: center; max-width: 300px; width: 90%;
+      transform: scale(0.85); transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    }
+    .qr-modal.show .qr-box { transform: scale(1); }
+    .qr-box h3 { font-size: 1rem; font-weight: 900; margin-bottom: 6px; }
+    .qr-box p { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 16px; }
+    #qr-code { display: flex; justify-content: center; margin-bottom: 14px; }
+    #qr-code canvas, #qr-code img { border-radius: 10px; }
+    .qr-close {
+      font-size: 12px; color: rgba(255,255,255,0.3);
+      cursor: pointer; text-decoration: underline;
+    }
+    .guess-section { margin-top: 30px; }
+
+    @keyframes popIn {
+      0%  { transform: scale(0.5); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100%{ transform: scale(1); opacity: 1; }
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 30px 20px; }
+      h1 { font-size: 2.2rem; }
+      .letter-cube { width: 46px; height: 46px; }
+      .cube-face { font-size: 19px; }
+      input, button { width: 100%; }
+      .input-row { flex-direction: column; }
+      .column { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background layers -->
+  <div class="stars-layer"></div>
+  <div class="spotlights">
+    <div class="spotlight spotlight-1"></div>
+    <div class="spotlight spotlight-2"></div>
+    <div class="spotlight spotlight-3"></div>
+  </div>
+  <div class="particles" id="particles"></div>
+  <div class="floor-glow" style="display:none"></div>
+
+  <!-- Columns: left and right only -->
+  <div class="columns-wrap" id="columnsWrap">
+    <div class="column"><div class="col-capital"></div><div class="col-shaft"></div><div class="col-base"></div></div>
+    <div class="column"><div class="col-capital"></div><div class="col-shaft"></div><div class="col-base"></div></div>
+  </div>  
+
+  <!-- Confetti canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Game -->
+  <div class="container">
+    <h1>Поле чудес</h1>
+    <p class="subtitle">Угадай слово</p>
+    <div class="divider"></div>
+
+    <div class="input-section" id="setupSection">
+      <p class="section-label">Ведущий</p>
+      <div class="input-row">
+        <input type="password" id="wordInput" placeholder="Введите слово для игры" autocomplete="off">
+        <button id="setWordBtn">Начать игру</button>
+      </div>
+      <!-- Image assign panel (shown after paste) -->
+      <div id="img-assign-panel">
+        <img id="img-preview" class="preview" src="" alt="">
+        Вставить картинку на позицию буквы:
+        <select id="img-pos-select"></select>
+        <button id="img-assign-btn">Назначить</button>
+      </div>
+    </div>
+
+    <div class="word-container" id="wordContainer"></div>
+
+    <div id="guessSection" class="hidden guess-section">
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="attemptsCount">0</div>
+          <div class="stat-label">Попыток</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="hitsCount">0</div>
+          <div class="stat-label">Угадано</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="missCount">0</div>
+          <div class="stat-label">Промахов</div>
+        </div>
+      </div>
+
+      <p class="section-label">Угадайте букву или слово целиком</p>
+      <div class="input-row">
+        <input type="text" id="letterInput" maxlength="1" placeholder="Одна буква" autocomplete="off">
+        <button id="checkLetterBtn">Буква</button>
+      </div>
+      <div class="input-row" style="margin-top:10px;">
+        <input type="text" id="wordGuessInput" placeholder="Угадать слово целиком" autocomplete="off">
+        <button id="checkWordBtn">Угадать</button>
+      </div>
+      <div class="input-row" style="margin-top:10px;">
+        <button id="revealBtn" style="background: linear-gradient(135deg,#ff4757,#c0392b); box-shadow: 0 6px 24px rgba(255,71,87,0.3);">🔓 Раскрыть слово</button>
+      </div>
+
+      <div class="guessed-section">
+        <div class="guessed-letters" id="guessedLetters"></div>
+      </div>
+    </div>
+
+    <div class="message" id="message"></div>
+  </div>
+
+  <!-- Camera panel -->
+  <div class="cam-panel" id="camPanel">
+    <div class="cam-panel-title">📷 Камера</div>
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div id="cam-status">Нет подключения</div>
+    <button class="cam-qr-btn" id="showQrBtn">Показать QR</button>
+  </div>
+
+  <!-- QR modal -->
+  <div class="qr-modal" id="qrModal">
+    <div class="qr-box">
+      <h3>Подключи телефон</h3>
+      <p>Отсканируй QR камерой телефона — он начнёт стримить видео сюда</p>
+      <div id="qr-code"></div>
+      <span class="qr-close" id="qrClose">Закрыть</span>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+      <div class="confirm-icon">🔓</div>
+      <div class="confirm-title">Раскрыть слово?</div>
+      <div class="confirm-text">Все буквы будут показаны.<br>Это завершит игру.</div>
+      <div class="confirm-btns">
+        <button class="btn-cancel" id="confirmNo">Отмена</button>
+        <button class="btn-confirm-yes" id="confirmYes">Раскрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Particles
+    const particlesEl = document.getElementById('particles');
+    for (let i = 0; i < 50; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 2.5 + 0.5;
+      p.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${Math.random()*100}%;
+        animation-duration:${Math.random()*18+10}s;
+        animation-delay:${Math.random()*18}s;
+        opacity:${Math.random()*0.5+0.1};
+      `;
+      particlesEl.appendChild(p);
+    }
+
+    // ── CONFETTI ──
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let confettiPieces = [];
+    let confettiAnim = null;
+
+    function launchConfetti() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      confettiPieces = [];
+      const colors = ['#ffd700','#f093fb','#667eea','#2ed573','#ff6b81','#00d2ff','#fff'];
+      for (let i = 0; i < 180; i++) {
+        confettiPieces.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * -canvas.height,
+          w: Math.random() * 10 + 5,
+          h: Math.random() * 6 + 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rot: Math.random() * Math.PI * 2,
+          vx: (Math.random() - 0.5) * 3,
+          vy: Math.random() * 4 + 2,
+          vr: (Math.random() - 0.5) * 0.15,
+          opacity: 1
+        });
+      }
+      if (confettiAnim) cancelAnimationFrame(confettiAnim);
+      animateConfetti();
+    }
+
+    function animateConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      confettiPieces.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        if (p.y > canvas.height * 0.7) p.opacity -= 0.02;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.opacity);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      });
+      confettiPieces = confettiPieces.filter(p => p.opacity > 0);
+      if (confettiPieces.length > 0) {
+        confettiAnim = requestAnimationFrame(animateConfetti);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    // ── GAME ELEMENTS ──
+    const wordInput        = document.getElementById('wordInput');
+    const setWordBtn       = document.getElementById('setWordBtn');
+    const letterInput      = document.getElementById('letterInput');
+    const checkLetterBtn   = document.getElementById('checkLetterBtn');
+    const wordGuessInput   = document.getElementById('wordGuessInput');
+    const checkWordBtn     = document.getElementById('checkWordBtn');
+    const wordContainer    = document.getElementById('wordContainer');
+    const guessSection     = document.getElementById('guessSection');
+    const guessedLettersEl = document.getElementById('guessedLetters');
+    const message          = document.getElementById('message');
+    const attemptsCount    = document.getElementById('attemptsCount');
+    const hitsCount        = document.getElementById('hitsCount');
+    const missCount        = document.getElementById('missCount');
+
+    let targetWord = '', guessedLetters = [], hits = 0, misses = 0;
+    const imageMap = {};
+
+    // ── PASTE IMAGE ──
+    let pendingImageUrl = null;
+
+    wordInput.addEventListener('paste', e => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = ev => {
+            pendingImageUrl = ev.target.result;
+            document.getElementById('img-preview').src = pendingImageUrl;
+            // populate position selector with current word length
+            populateImgSelect();
+            document.getElementById('img-assign-panel').classList.add('show');
+          };
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    });
+
+    function populateImgSelect() {
+      const word = wordInput.value.trim();
+      const sel = document.getElementById('img-pos-select');
+      sel.innerHTML = '';
+      if (!word) {
+        const opt = document.createElement('option');
+        opt.textContent = '— введите слово сначала —';
+        sel.appendChild(opt);
+        return;
+      }
+      [...word].forEach((ch, i) => {
+        if (ch === ' ') return;
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${i + 1}: ${ch.toUpperCase()}`;
+        sel.appendChild(opt);
+      });
+    }
+
+    // Re-populate when word changes
+    wordInput.addEventListener('input', () => {
+      if (document.getElementById('img-assign-panel').classList.contains('show')) {
+        populateImgSelect();
+      }
+    });
+
+    document.getElementById('img-assign-btn').addEventListener('click', () => {
+      const sel = document.getElementById('img-pos-select');
+      const pos = parseInt(sel.value);
+      if (isNaN(pos) || !pendingImageUrl) return;
+      imageMap[pos] = pendingImageUrl;
+      pendingImageUrl = null;
+      document.getElementById('img-assign-panel').classList.remove('show');
+      showMessage(`🖼 Картинка назначена на позицию ${pos + 1}`, 'success');
+    });
+
+    // ── GAME ──
+    setWordBtn.addEventListener('click', () => {
+      const word = wordInput.value.trim();
+      if (!word) { showMessage('Введите слово!', 'error'); return; }
+
+      targetWord = word.toLowerCase();
+      guessedLetters = []; hits = 0; misses = 0;
+      updateStats();
+      guessedLettersEl.innerHTML = '';
+      wordContainer.innerHTML = '';
+
+      for (const [i, letter] of [...word].entries()) {
+        const cube = document.createElement('div');
+        cube.className = 'letter-cube' + (letter === ' ' ? ' space' : '');
+        const inner = document.createElement('div'); inner.className = 'cube-inner';
+        const front = document.createElement('div'); front.className = 'cube-face front';
+        front.textContent = letter === ' ' ? '' : '?';
+        const back = document.createElement('div'); back.className = 'cube-face back';
+
+        if (imageMap[i]) {
+          back.classList.add('has-image');
+          const img = document.createElement('img');
+          img.src = imageMap[i];
+          back.appendChild(img);
+        } else {
+          back.textContent = letter.toUpperCase();
+        }
+
+        inner.append(front, back);
+        cube.appendChild(inner);
+        wordContainer.appendChild(cube);
+      }
+
+      wordInput.value = '';
+      // clear image map for next game
+      Object.keys(imageMap).forEach(k => delete imageMap[k]);
+      letterInput.disabled = false;
+      checkLetterBtn.disabled = false;
+      wordGuessInput.disabled = false;
+      checkWordBtn.disabled = false;
+      guessSection.classList.remove('hidden');
+      showMessage('Игра началась — угадывай!', 'success');
+    });
+
+    checkLetterBtn.addEventListener('click', checkLetter);
+    letterInput.addEventListener('keypress', e => { if (e.key === 'Enter') checkLetter(); });
+
+    const confirmOverlay = document.getElementById('confirmOverlay');
+    document.getElementById('revealBtn').addEventListener('click', () => {
+      confirmOverlay.classList.add('show');
+    });
+    document.getElementById('confirmNo').addEventListener('click', () => {
+      confirmOverlay.classList.remove('show');
+    });
+    document.getElementById('confirmYes').addEventListener('click', () => {
+      confirmOverlay.classList.remove('show');
+      document.querySelectorAll('.letter-cube:not(.space)').forEach(c => c.classList.add('flipped'));
+      showMessage('Слово раскрыто!', 'error');
+    });
+    confirmOverlay.addEventListener('click', e => {
+      if (e.target === confirmOverlay) confirmOverlay.classList.remove('show');
+    });
+    checkWordBtn.addEventListener('click', checkFullWord);
+    wordGuessInput.addEventListener('keypress', e => { if (e.key === 'Enter') checkFullWord(); });
+
+    function checkFullWord() {
+      const input = wordGuessInput.value.trim().toLowerCase();
+      if (!input) { showMessage('Введите слово!', 'error'); return; }
+      misses++;
+      updateStats();
+      wordGuessInput.value = '';
+      if (input === targetWord) {
+        // Reveal all
+        document.querySelectorAll('.letter-cube:not(.space)').forEach(c => c.classList.add('flipped'));
+        triggerWin();
+      } else {
+        showMessage(`«${input.toUpperCase()}» — не то слово`, 'error');
+      }
+    }
+
+    function checkLetter() {
+      const input = letterInput.value.toLowerCase().trim();
+      if (!input) { showMessage('Введите букву!', 'error'); return; }
+      if (guessedLetters.includes(input)) {
+        showMessage(`Буква «${input.toUpperCase()}» уже была`, 'error');
+        letterInput.value = ''; return;
+      }
+
+      guessedLetters.push(input);
+      const cubes = document.querySelectorAll('.letter-cube');
+      let found = false;
+
+      cubes.forEach((cube, i) => {
+        if (targetWord[i] === input) { cube.classList.add('flipped'); found = true; }
+      });
+
+      if (found) {
+        hits++; addChip(input, 'hit');
+        showMessage(`Буква «${input.toUpperCase()}» есть в слове`, 'success');
+        checkWin();
+      } else {
+        misses++; addChip(input, 'miss');
+        showMessage(`Буквы «${input.toUpperCase()}» нет в слове`, 'error');
+      }
+
+      updateStats();
+      letterInput.value = '';
+    }
+
+    function addChip(letter, type) {
+      const chip = document.createElement('span');
+      chip.className = `guessed-chip ${type}`;
+      chip.textContent = letter.toUpperCase();
+      guessedLettersEl.appendChild(chip);
+    }
+
+    function checkWin() {
+      const flipped = document.querySelectorAll('.letter-cube.flipped').length;
+      const total = [...targetWord].filter(c => c !== ' ').length;
+      if (flipped === total) triggerWin();
+    }
+
+    function triggerWin() {
+      showMessage('🎉 Слово угадано! Поздравляем!', 'win');
+      letterInput.disabled = true;
+      checkLetterBtn.disabled = true;
+      wordGuessInput.disabled = true;
+      checkWordBtn.disabled = true;
+      launchConfetti();
+    }
+
+    function updateStats() {
+      attemptsCount.textContent = hits + misses;
+      hitsCount.textContent = hits;
+      missCount.textContent = misses;
+    }
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = 'message ' + (type === 'win' ? 'win-message' : type);
+      message.classList.add('show');
+      clearTimeout(message._timer);
+      if (type !== 'win') {
+        message._timer = setTimeout(() => message.classList.remove('show'), 3500);
+      }
+    }
+    // ── CAMERA / PEERJS ──
+    const params = new URLSearchParams(location.search);
+    const phoneMode = params.get('phone'); // if set — this is the phone sender
+
+    if (phoneMode) {
+      // ── PHONE MODE: send camera to peer ──
+      document.body.innerHTML = `
+        <div style="font-family:Montserrat,sans-serif;background:#07050f;color:#fff;
+          min-height:100vh;display:flex;flex-direction:column;align-items:center;
+          justify-content:center;gap:16px;padding:20px;text-align:center;">
+          <div style="font-size:2rem;">📷</div>
+          <div style="font-weight:900;font-size:1.2rem;">Режим камеры</div>
+          <div id="phone-status" style="font-size:0.8rem;color:rgba(255,255,255,0.4)">Подключение...</div>
+          <video id="phone-preview" autoplay playsinline muted
+            style="width:260px;border-radius:14px;background:#000;"></video>
+        </div>`;
+      const peer = new Peer(phoneMode, { host: 'peerjs.fly.dev', secure: true, port: 443 });
+      navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio: false })
+        .then(stream => {
+          document.getElementById('phone-preview').srcObject = stream;
+          // Phone calls desktop directly using peerId from URL
+      peer.on('open', myId => {
+        document.getElementById('phone-status').textContent = 'Звоним на компьютер...';
+        const call = peer.call(phoneMode, stream);
+        call.on('stream', () => {
+          document.getElementById('phone-status').textContent = '🔴 Стрим идёт';
+        });
+        call.on('error', () => {
+          document.getElementById('phone-status').textContent = '❌ Ошибка соединения';
+        });
+      });        })
+        .catch(() => {
+          document.getElementById('phone-status').textContent = '❌ Нет доступа к камере';
+        });
+    } else {
+      // ── DESKTOP MODE: receive camera from phone ──
+      const peer = new Peer({ host: 'peerjs.fly.dev', secure: true, port: 443 });
+      let peerId = null;
+
+      const camVideo = document.getElementById('cam-video');
+      const camStatus = document.getElementById('cam-status');
+      const showQrBtn = document.getElementById('showQrBtn');
+      showQrBtn.textContent = '⏳ Подключение...';
+      showQrBtn.disabled = true;
+
+      peer.on('open', id => {
+        peerId = id;
+        showQrBtn.textContent = 'Показать QR';
+        showQrBtn.disabled = false;
+      });
+
+      document.getElementById('showQrBtn').addEventListener('click', () => {
+        if (!peerId) return; // просто игнорируем если не готов
+        const phoneUrl = location.href.split('?')[0] + '?phone=' + peerId;
+        document.getElementById('qr-code').innerHTML = '';
+        new QRCode(document.getElementById('qr-code'), {
+          text: phoneUrl, width: 200, height: 200,
+          colorDark: '#ffffff', colorLight: '#0f0c29',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+        document.getElementById('qrModal').classList.add('show');
+      });
+
+      // Phone calls us after connecting
+      peer.on('call', call => {
+        call.answer();
+        call.on('stream', stream => {
+          camVideo.srcObject = stream;
+          camStatus.textContent = '🔴 Камера подключена';
+          camStatus.className = 'connected';
+          document.getElementById('qrModal').classList.remove('show');
+        });
+      });
+
+      document.getElementById('qrClose').addEventListener('click', () => {
+        document.getElementById('qrModal').classList.remove('show');
+      });
+      document.getElementById('qrModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('qrModal'))
+          document.getElementById('qrModal').classList.remove('show');
+      });
+    }
+
+  </script>
+</body>
+</html>
