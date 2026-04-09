@@ -983,7 +983,19 @@
           <video id="phone-preview" autoplay playsinline muted
             style="width:260px;border-radius:14px;background:#000;"></video>
         </div>`;
-      const peer = new Peer(phoneMode, { host: 'peerjs.fly.dev', secure: true, port: 443 });
+      const peer = new Peer(phoneMode, {
+        host: 'peer-server-production-b3b5.up.railway.app',
+        secure: true,
+        port: 443,
+        path: '/',
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' }
+          ]
+        }
+      });
       navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' }, audio: false })
         .then(stream => {
           document.getElementById('phone-preview').srcObject = stream;
@@ -1003,7 +1015,19 @@
         });
     } else {
       // ── DESKTOP MODE: receive camera from phone ──
-      const peer = new Peer({ host: 'peerjs.fly.dev', secure: true, port: 443 });
+      const peer = new Peer(undefined, {
+        host: 'peer-server-production-b3b5.up.railway.app',
+        secure: true,
+        port: 443,
+        path: '/',
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' }
+          ]
+        }
+      });
       let peerId = null;
 
       const camVideo = document.getElementById('cam-video');
